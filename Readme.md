@@ -10,7 +10,13 @@ A comprehensive tool for analyzing financial returns data.
 
 ## Installation
 
+# Return Analyzer
+
+A comprehensive tool for analyzing financial returns data.
+
+## Installation
+
 1. Clone the repository:
    ```sh
-   git clone https://github.com/yourusername/portfolio_analysis.git
-   cd portfolio_analysis
+   git clone https://github.com/kratos143/Return_Analyzer.git
+   cd Return_Analyzer
