@@ -7,12 +7,15 @@ setup(
     install_requires=[
         'pandas',
         'numpy',
+        'scipy',
+        'matplotlib',
+        'seaborn',
         'yfinance',
     ],
     author='Your Name',
     author_email='your.email@example.com',
     description='A package for analyzing returns',
-    url='https://github.com/yourusername/return_analyzer',
+    url='https://github.com/yourusername/Return_Analyzer',
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
