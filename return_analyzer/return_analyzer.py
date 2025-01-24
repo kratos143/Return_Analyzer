@@ -7,24 +7,37 @@ from typing import Optional, Tuple
 from statsmodels.stats.diagnostic import acorr_ljungbox  # For autocorrelation test
 
 class ReturnAnalyzer:
-    """
-    Comprehensive financial returns analyzer with risk metrics, statistical analysis,
-    and visualization capabilities.
-    """
-    def __init__(self, returns: pd.Series, benchmark: Optional[pd.Series] = None, risk_free_rate: float = 0.0):
-        """
-        Initialize the ReturnAnalyzer with returns data.
+    def __init__(self, returns: pd.Series, benchmark: Optional[pd.Series | pd.DataFrame] = None, risk_free_rate: float = 0.0):
+        """Initialize the ReturnAnalyzer with returns data."""
+        # Validate input types
+        if not isinstance(returns, pd.Series):
+            raise TypeError("returns must be a pandas Series")
+
+        # Handle benchmark DataFrame conversion
+        if isinstance(benchmark, pd.DataFrame):
+            benchmark = benchmark.squeeze()  # Convert DataFrame to Series
         
-        Parameters:
-        -----------
-        returns : pd.Series
-            Daily returns series with datetime index
-        benchmark : pd.Series, optional
-            Benchmark returns series with datetime index
-        risk_free_rate : float, optional
-            Annualized risk-free rate (default: 0.0)
-        """
+        if benchmark is not None and not isinstance(benchmark, pd.Series):
+            raise TypeError("benchmark must be a pandas Series")
+
+        # Convert returns to daily if needed
+        if isinstance(returns.index, pd.DatetimeIndex):
+            has_time = (returns.index.time != pd.Timestamp('00:00:00').time()).any()
+            if has_time:
+                returns = self.convert_to_daily(returns)
+        
+        # Convert benchmark to daily if needed
         if benchmark is not None:
+            if isinstance(benchmark.index, pd.DatetimeIndex):
+                has_time = (benchmark.index.time != pd.Timestamp('00:00:00').time()).any()
+                if has_time:
+                    benchmark = self.convert_to_daily(benchmark)
+            
+            # Ensure both series have datetime index
+            returns.index = pd.to_datetime(returns.index)
+            benchmark.index = pd.to_datetime(benchmark.index)
+            
+            # Align returns and benchmark
             self.returns, self.benchmark = returns.align(benchmark, join='inner')
         else:
             self.returns = returns
@@ -34,8 +47,34 @@ class ReturnAnalyzer:
         self.daily_rf = (1 + risk_free_rate) ** (1/252) - 1
         self._validate_data()
 
+    def convert_to_daily(self, returns: pd.Series) -> pd.Series:
+        """
+        Convert intraday returns to daily returns by summing returns for each date.
+        
+        Parameters:
+        -----------
+        returns : pd.Series
+            Returns series with datetime index including time
+            
+        Returns:
+        --------
+        pd.Series
+            Daily returns series with date-only index
+        """
+        # Ensure datetime index
+        returns.index = pd.to_datetime(returns.index)
+        # Resample to daily frequency and sum returns
+        daily_returns = returns.resample('D').sum()
+        # Remove days with no trades (zero returns)
+        daily_returns = daily_returns[daily_returns != 0]
+        return daily_returns
+
     def _validate_data(self):
-        """Validate input data format and alignment."""
+        """Validate the input data."""
+        if len(self.returns) == 0:
+            raise ValueError("Returns series is empty")
+        if self.benchmark is not None and len(self.benchmark) == 0:
+            raise ValueError("Benchmark series is empty")
         if not isinstance(self.returns.index, pd.DatetimeIndex):
             raise ValueError("Returns must have a datetime index")
             
@@ -433,4 +472,3 @@ class ReturnAnalyzer:
         cumulative = (1 + self.returns).cumprod()
         peak = cumulative.expanding().max()
         return (cumulative / peak) - 1
-
