@@ -23,7 +23,7 @@ def generate_example_data():
     )
     
     # Generate example benchmark returns data (e.g., NIFTY 50)
-    benchmark_data = yf.download("^NSEI", start="2022-01-01", end="2022-12-31")
+    benchmark_data = yf.download("AAPL", start="2022-01-01", end="2022-12-31")
     benchmark_returns = benchmark_data['Adj Close'].pct_change().dropna()
     benchmark_returns.name = 'Benchmark Returns'
     
